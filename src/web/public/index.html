@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>steveX Panel</title>
+    <style>
+      :root {
+        --bg: #f4f1ed;
+        --ink: #1f1e1c;
+        --muted: #6b655f;
+        --accent: #d36b2a;
+        --accent-2: #6aa84f;
+        --card: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Space Grotesk", "IBM Plex Sans", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background: radial-gradient(circle at top left, #fff7e8 0%, var(--bg) 55%)
+          no-repeat fixed;
+      }
+
+      header {
+        padding: 24px 32px 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: 0.5px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      main {
+        padding: 20px 32px 40px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+      }
+
+      .card h2 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        background: #f7ede6;
+        color: var(--muted);
+        margin-right: 6px;
+      }
+
+      .pill.online {
+        background: rgba(106, 168, 79, 0.2);
+        color: #2b4b1f;
+      }
+
+      .pill.offline {
+        background: rgba(211, 107, 42, 0.15);
+        color: #7c3b12;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      button {
+        border: none;
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-weight: 600;
+        cursor: pointer;
+        background: var(--ink);
+        color: white;
+      }
+
+      button.secondary {
+        background: #dcd6d0;
+        color: #2f2b28;
+      }
+
+      button.green {
+        background: var(--accent-2);
+      }
+
+      button.orange {
+        background: var(--accent);
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .status {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .chat {
+        margin-top: 10px;
+        display: flex;
+        gap: 6px;
+      }
+
+      input[type="text"] {
+        flex: 1;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+      }
+
+      .command {
+        margin-top: 10px;
+        display: flex;
+        gap: 6px;
+      }
+
+      .command input {
+        font-family: "Space Grotesk", "IBM Plex Sans", "Segoe UI", monospace;
+        font-size: 12px;
+      }
+
+      .output {
+        margin-top: 6px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: #f7ede6;
+        font-size: 12px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-height: 80px;
+        overflow-y: auto;
+        display: none;
+        color: var(--ink);
+      }
+
+      .output.error {
+        background: rgba(211, 107, 42, 0.12);
+        color: #7c3b12;
+      }
+
+      .output.success {
+        background: rgba(106, 168, 79, 0.12);
+        color: #2b4b1f;
+      }
+
+      @media (max-width: 600px) {
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>steveX Control</h1>
+        <div class="subtitle">Live agent overview and controls</div>
+      </div>
+      <div class="toolbar">
+        <button id="reload">Reload Config</button>
+        <span class="status" id="uptime">Uptime: --</span>
+      </div>
+    </header>
+
+    <main id="grid"></main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

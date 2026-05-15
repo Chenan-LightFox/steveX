@@ -1,0 +1,17 @@
+{
+  "name": "stevex",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "mineflayer": "^4.33.0",
+    "mineflayer-pathfinder": "^2.4.5"
+  }
+}

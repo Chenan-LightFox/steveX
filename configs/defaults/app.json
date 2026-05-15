@@ -1,0 +1,44 @@
+{
+  "agents": [
+    {
+      "name": "steveX-1",
+      "minecraft": {
+        "host": "localhost",
+        "port": 25565,
+        "username": "steveX-1",
+        "auth": "offline",
+        "version": false
+      },
+      "llm": {
+        "provider": "deepseek",
+        "apiKey": "",
+        "model": "deepseek-v4-flash",
+        "baseUrl": "https://api.deepseek.com/v1/chat/completions",
+        "timeoutMs": 20000
+      }
+    },
+    {
+      "name": "steveX-2",
+      "minecraft": {
+        "host": "localhost",
+        "port": 25565,
+        "username": "steveX-2",
+        "auth": "offline",
+        "version": false
+      },
+      "llm": {
+        "provider": "deepseek",
+        "apiKey": "",
+        "model": "deepseek-v4-flash",
+        "baseUrl": "https://api.deepseek.com/v1/chat/completions",
+        "timeoutMs": 20000
+      }
+    }
+  ]
+  ,
+  "web": {
+    "enabled": true,
+    "host": "0.0.0.0",
+    "port": 8090
+  }
+}
