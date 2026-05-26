@@ -30,6 +30,12 @@ async function loadConfig() {
     setStatus('Loaded successfully.', 'success')
   } catch (err) {
     console.error('[configs] Load failed:', err)
+
+    if (editorEl) {
+      editorEl.value = ''
+      editorEl.placeholder = `Failed to load: ${err.message}`
+    }
+
     setStatus(`Load failed: ${err.message}`, 'error')
   }
 }

@@ -51,6 +51,16 @@ function registerRoutes(app, manager) {
       }
 
       const nextRaw = `${JSON.stringify(config, null, 2)}\n`
+
+      // Guard against oversized config blobs
+      const MAX_SIZE = 512 * 1024 // 512 KB
+      if (Buffer.byteLength(nextRaw, 'utf8') > MAX_SIZE) {
+        return res.status(413).json({
+          ok: false,
+          error: `Config too large (max ${MAX_SIZE / 1024} KB)`
+        })
+      }
+
       await fs.writeFile(ENV_CONFIG_PATH, nextRaw, 'utf8')
 
       res.json({
