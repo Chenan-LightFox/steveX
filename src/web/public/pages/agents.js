@@ -15,55 +15,16 @@ const PLACEHOLDER = {
   action: 'Idle'
 }
 
-// Convert backend agent data into the values displayed on the card.
-// It supports several possible field names, and falls back to PLACEHOLDER
-// only when the backend does not provide that field.
+// Backend getStatus() already returns canonical field names.
+// Fall back to PLACEHOLDER only when a field is truly missing.
 function getAgentView(agent) {
-  const rawHealth = agent.health ?? agent.hp ?? agent.life ?? PLACEHOLDER.health
-  const rawMaxHealth = agent.maxHealth ?? agent.max_health ?? agent.maxHp ?? PLACEHOLDER.maxHealth
-
-  const health = Number.isFinite(Number(rawHealth))
-    ? Number(rawHealth)
-    : PLACEHOLDER.health
-
-  const maxHealth = Number.isFinite(Number(rawMaxHealth)) && Number(rawMaxHealth) > 0
-    ? Number(rawMaxHealth)
-    : PLACEHOLDER.maxHealth
-
-  const mode =
-    agent.gameMode ??
-    agent.gamemode ??
-    agent.mode ??
-    agent.game_mode ??
-    PLACEHOLDER.mode
-
-  const model =
-    agent.model ??
-    agent.llmModel ??
-    agent.llm_model ??
-    agent.modelName ??
-    PLACEHOLDER.model
-
-  const position =
-    agent.position ??
-    agent.pos ??
-    agent.location ??
-    PLACEHOLDER.position
-
-  const action =
-    agent.currentAction ??
-    agent.current_action ??
-    agent.action ??
-    agent.task ??
-    PLACEHOLDER.action
-
   return {
-    health,
-    maxHealth,
-    mode,
-    model,
-    position,
-    action
+    health: agent.health ?? PLACEHOLDER.health,
+    maxHealth: agent.maxHealth ?? PLACEHOLDER.maxHealth,
+    mode: agent.gameMode ?? PLACEHOLDER.mode,
+    model: agent.model ?? PLACEHOLDER.model,
+    position: agent.position ?? PLACEHOLDER.position,
+    action: agent.currentAction ?? PLACEHOLDER.action
   }
 }
 
