@@ -109,79 +109,39 @@ class AgentManager {
   getAgentHealth(agent) {
     const bot = this.getAgentBot(agent)
 
-    const health =
-      bot?.health ??
-      agent?.health ??
-      agent?.state?.health ??
-      20
-
-    const maxHealth =
-      bot?.maxHealth ??
-      agent?.maxHealth ??
-      agent?.state?.maxHealth ??
-      20
-
     return {
-      health: Number.isFinite(Number(health)) ? Number(health) : 20,
-      maxHealth: Number.isFinite(Number(maxHealth)) ? Number(maxHealth) : 20
+      health: bot?.health ?? 20,
+      maxHealth: bot?.maxHealth ?? 20
     }
   }
 
   getAgentGameMode(agent) {
     const bot = this.getAgentBot(agent)
 
-    return (
-      bot?.game?.gameMode ??
-      bot?.game?.mode ??
-      agent?.gameMode ??
-      agent?.gamemode ??
-      agent?.state?.gameMode ??
-      'Survival'
-    )
+    return bot?.game?.gameMode ?? 'Survival'
   }
 
   getAgentPosition(agent) {
     const bot = this.getAgentBot(agent)
+    const pos = bot?.entity?.position
 
-    const position =
-      bot?.entity?.position ??
-      agent?.position ??
-      agent?.state?.position ??
-      null
-
-    if (!position) {
-      return {
-        x: '~',
-        y: '~',
-        z: '~'
-      }
+    if (!pos) {
+      return { x: '~', y: '~', z: '~' }
     }
 
     return {
-      x: Number.isFinite(Number(position.x)) ? Number(position.x).toFixed(1) : '~',
-      y: Number.isFinite(Number(position.y)) ? Number(position.y).toFixed(1) : '~',
-      z: Number.isFinite(Number(position.z)) ? Number(position.z).toFixed(1) : '~'
+      x: Number.isFinite(pos.x) ? pos.x.toFixed(1) : '~',
+      y: Number.isFinite(pos.y) ? pos.y.toFixed(1) : '~',
+      z: Number.isFinite(pos.z) ? pos.z.toFixed(1) : '~'
     }
   }
 
   getAgentAction(agent) {
-    return (
-      agent?.currentAction ??
-      agent?.action ??
-      agent?.state?.currentAction ??
-      agent?.state?.action ??
-      'Idle'
-    )
+    return agent?.currentAction ?? 'Idle'
   }
 
-  getAgentModel(cfg, agent) {
-    return (
-      agent?.model ??
-      agent?.llmModel ??
-      agent?.state?.model ??
-      cfg?.llm?.model ??
-      'Unknown'
-    )
+  getAgentModel(cfg) {
+    return cfg?.llm?.model ?? 'Unknown'
   }
 
   // ── Queries ──
@@ -205,7 +165,7 @@ class AgentManager {
         currentAction: this.getAgentAction(agent),
 
         // Config-derived display data
-        model: this.getAgentModel(cfg, agent)
+        model: this.getAgentModel(cfg)
       }
     })
   }
