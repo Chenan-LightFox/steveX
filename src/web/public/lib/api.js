@@ -39,3 +39,30 @@ export async function sendCommand(name, command) {
   const result = await res.json()
   return result
 }
+export async function fetchEnvConfig() {
+  const res = await fetch('/api/config/environment')
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}))
+    throw new Error(error.error || 'Failed to load config')
+  }
+
+  return res.json()
+}
+
+export async function saveEnvConfig(config) {
+  const res = await fetch('/api/config/environment', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ config })
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}))
+    throw new Error(error.error || 'Failed to save config')
+  }
+
+  return res.json()
+}

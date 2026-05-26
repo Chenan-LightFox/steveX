@@ -15,10 +15,17 @@ class SteveXAgent {
     this.movements = null
     this.commands = commands
     this.connected = false
+
+    // Current action shown on the web console.
+    // It will be updated when a command is running.
+    this.currentAction = 'Idle'
   }
 
   start() {
     const mc = this.config.minecraft
+
+    this.currentAction = 'Connecting'
+
     this.bot = mineflayer.createBot({
       host: mc.host,
       port: mc.port,
@@ -26,6 +33,7 @@ class SteveXAgent {
       auth: mc.auth,
       version: mc.version
     })
+
     this.bot.loadPlugin(pathfinder)
     this.registerEvents()
   }
@@ -33,7 +41,10 @@ class SteveXAgent {
   registerEvents() {
     this.bot.once('spawn', () => {
       this.connected = true
+      this.currentAction = 'Idle'
+
       console.log(`[info](${this.name}) Bot spawned `)
+
       const mcData = mcDataLoader(this.bot.version)
       this.movements = new Movements(this.bot, mcData)
       this.bot.pathfinder.setMovements(this.movements)
@@ -42,12 +53,21 @@ class SteveXAgent {
     // 统一断连处理：end/kicked 都标记为离线
     const onDisconnect = (reason) => {
       this.connected = false
-      if (reason) console.error(`[error](${this.name}) Bot disconnected`, reason)
+      this.currentAction = 'Offline'
+
+      if (reason) {
+        console.error(`[error](${this.name}) Bot disconnected`, reason)
+      }
     }
 
     this.bot.on('end', () => onDisconnect())
-    this.bot.on('kicked', (reason) => onDisconnect(reason))
+
+    this.bot.on('kicked', (reason) => {
+      onDisconnect(reason)
+    })
+
     this.bot.on('error', (error) => {
+      this.currentAction = 'Error'
       console.error(`[error](${this.name}) Bot error`, error)
     })
   }
@@ -60,12 +80,19 @@ class SteveXAgent {
    */
   async executeCommand(input) {
     if (!this.bot) {
-      return { ok: false, error: 'Bot not started' }
+      return {
+        ok: false,
+        error: 'Bot not started'
+      }
     }
 
     const trimmed = input.trim()
+
     if (!trimmed) {
-      return { ok: false, error: 'Empty command' }
+      return {
+        ok: false,
+        error: 'Empty command'
+      }
     }
 
     const parts = trimmed.split(/\s+/)
@@ -73,16 +100,33 @@ class SteveXAgent {
     const args = parts.slice(1)
 
     const handler = this.commands[command]
+
     if (!handler) {
       const available = Object.keys(this.commands).sort().join(', ')
-      return { ok: false, error: `Unknown command: ${command}. Available: ${available}` }
+
+      return {
+        ok: false,
+        error: `Unknown command: ${command}. Available: ${available}`
+      }
     }
 
+    // Let the web console show what the agent is doing.
+    this.currentAction = command
+
     try {
-      return await handler.call(this, this.bot, args)
+      const result = await handler.call(this, this.bot, args)
+      return result
     } catch (err) {
       console.error(`[error](${this.name}) Command error`, err)
-      return { ok: false, error: err.message || String(err) }
+
+      return {
+        ok: false,
+        error: err.message || String(err)
+      }
+    } finally {
+      // Restore to idle after command finishes.
+      // If the bot disconnected during the command, keep it as Offline.
+      this.currentAction = this.connected ? 'Idle' : 'Offline'
     }
   }
 
@@ -96,12 +140,20 @@ class SteveXAgent {
     return this.bot ? this.bot.username : this.config.minecraft.username
   }
 
+  /** The current action shown in web console. */
+  getCurrentAction() {
+    return this.currentAction
+  }
+
   /** Gracefully disconnect the bot from the server. */
   shutdown() {
     if (this.bot) {
+      this.currentAction = 'Disconnecting'
       this.bot.end()
     }
+
     this.connected = false
+    this.currentAction = 'Offline'
   }
 }
 

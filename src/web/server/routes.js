@@ -1,7 +1,12 @@
+const fs = require('fs/promises')
+const path = require('path')
+
+const ENV_CONFIG_RELATIVE_PATH = path.join('configs', 'environments', 'app.json')
+const ENV_CONFIG_PATH = path.resolve(process.cwd(), ENV_CONFIG_RELATIVE_PATH)
+
 /**
  * Register all API routes on the Express app.
  */
-
 function registerRoutes(app, manager) {
 
   // ---- Status ----
@@ -10,6 +15,56 @@ function registerRoutes(app, manager) {
       agents: manager.getStatus(),
       uptimeSec: Math.floor(process.uptime())
     })
+  })
+
+  // ---- Read environment config ----
+  app.get('/api/config/environment', async (req, res) => {
+    try {
+      const raw = await fs.readFile(ENV_CONFIG_PATH, 'utf8')
+      const config = JSON.parse(raw)
+
+      res.json({
+        ok: true,
+        path: ENV_CONFIG_RELATIVE_PATH,
+        config
+      })
+    } catch (err) {
+      console.error('[web] Failed to read environment config:', err)
+
+      res.status(500).json({
+        ok: false,
+        error: err.message || 'Failed to read environment config'
+      })
+    }
+  })
+
+  // ---- Save environment config ----
+  app.post('/api/config/environment', async (req, res) => {
+    try {
+      const config = req.body && req.body.config
+
+      if (!config || typeof config !== 'object' || Array.isArray(config)) {
+        return res.status(400).json({
+          ok: false,
+          error: 'Request body must contain a config object'
+        })
+      }
+
+      const nextRaw = `${JSON.stringify(config, null, 2)}\n`
+      await fs.writeFile(ENV_CONFIG_PATH, nextRaw, 'utf8')
+
+      res.json({
+        ok: true,
+        path: ENV_CONFIG_RELATIVE_PATH
+      })
+    } catch (err) {
+      console.error('[web] Failed to save environment config:', err)
+
+      res.status(500).json({
+        ok: false,
+        error: err.message || 'Failed to save environment config'
+      })
+    }
   })
 
   // ---- Reload config ----
@@ -38,7 +93,10 @@ function registerRoutes(app, manager) {
     const command = (req.body.command || '').trim()
 
     if (!command) {
-      return res.status(400).json({ ok: false, error: 'Missing command' })
+      return res.status(400).json({
+        ok: false,
+        error: 'Missing command'
+      })
     }
 
     const result = await manager.sendCommand(name, command)
@@ -47,7 +105,10 @@ function registerRoutes(app, manager) {
 
   // ---- 404 catch-all ----
   app.use((req, res) => {
-    res.status(404).json({ ok: false, error: 'Not found' })
+    res.status(404).json({
+      ok: false,
+      error: 'Not found'
+    })
   })
 }
 

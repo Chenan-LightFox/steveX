@@ -15,6 +15,73 @@ const PLACEHOLDER = {
   action: 'Idle'
 }
 
+// Convert backend agent data into the values displayed on the card.
+// It supports several possible field names, and falls back to PLACEHOLDER
+// only when the backend does not provide that field.
+function getAgentView(agent) {
+  const rawHealth = agent.health ?? agent.hp ?? agent.life ?? PLACEHOLDER.health
+  const rawMaxHealth = agent.maxHealth ?? agent.max_health ?? agent.maxHp ?? PLACEHOLDER.maxHealth
+
+  const health = Number.isFinite(Number(rawHealth))
+    ? Number(rawHealth)
+    : PLACEHOLDER.health
+
+  const maxHealth = Number.isFinite(Number(rawMaxHealth)) && Number(rawMaxHealth) > 0
+    ? Number(rawMaxHealth)
+    : PLACEHOLDER.maxHealth
+
+  const mode =
+    agent.gameMode ??
+    agent.gamemode ??
+    agent.mode ??
+    agent.game_mode ??
+    PLACEHOLDER.mode
+
+  const model =
+    agent.model ??
+    agent.llmModel ??
+    agent.llm_model ??
+    agent.modelName ??
+    PLACEHOLDER.model
+
+  const position =
+    agent.position ??
+    agent.pos ??
+    agent.location ??
+    PLACEHOLDER.position
+
+  const action =
+    agent.currentAction ??
+    agent.current_action ??
+    agent.action ??
+    agent.task ??
+    PLACEHOLDER.action
+
+  return {
+    health,
+    maxHealth,
+    mode,
+    model,
+    position,
+    action
+  }
+}
+
+function formatPosition(position) {
+  const pos = position || PLACEHOLDER.position
+
+  const x = pos.x ?? '~'
+  const y = pos.y ?? '~'
+  const z = pos.z ?? '~'
+
+  return `x: ${x}, y: ${y}, z: ${z}`
+}
+
+function getHealthPercent(health, maxHealth) {
+  if (!maxHealth || maxHealth <= 0) return 0
+  return Math.max(0, Math.min(100, Math.round((health / maxHealth) * 100)))
+}
+
 // ── Filter / sort ──
 
 function filteredAgents() {
@@ -30,10 +97,16 @@ function filteredAgents() {
   })
 
   list.sort((a, b) => {
-    if (filters.sortBy === 'status')
+    if (filters.sortBy === 'status') {
       return Number(b.online) - Number(a.online) || a.name.localeCompare(b.name)
-    if (filters.sortBy === 'health')
-      return PLACEHOLDER.health - PLACEHOLDER.health || a.name.localeCompare(b.name)
+    }
+
+    if (filters.sortBy === 'health') {
+      const ah = getAgentView(a).health
+      const bh = getAgentView(b).health
+      return bh - ah || a.name.localeCompare(b.name)
+    }
+
     return a.name.localeCompare(b.name, undefined, { numeric: true })
   })
 
@@ -45,10 +118,11 @@ function filteredAgents() {
 function agentCardHtml(agent) {
   const statusClass = agent.online ? 'online' : 'offline'
   const statusText = agent.online ? 'online' : 'offline'
-  const percent = Math.max(0, Math.min(100, Math.round((PLACEHOLDER.health / PLACEHOLDER.maxHealth) * 100)))
-  const pos = PLACEHOLDER.position
-  const position = `x: ${pos.x}, y: ${pos.y}, z: ${pos.z}`
   const username = agent.username || '\u2014'
+
+  const view = getAgentView(agent)
+  const percent = getHealthPercent(view.health, view.maxHealth)
+  const position = formatPosition(view.position)
 
   return `
     <article class="agent-card" data-agent-name="${escapeHtml(agent.name)}">
@@ -84,20 +158,22 @@ function agentCardHtml(agent) {
               <div class="stat-value">
                 <span data-icon="heart"></span>
                 <span class="health-wrap">
-                  <span class="health-number">${PLACEHOLDER.health} / ${PLACEHOLDER.maxHealth}</span>
-                  <span class="health-bar" aria-label="Health ${percent}%"><span class="health-fill" style="--health:${percent}%"></span></span>
+                  <span class="health-number">${view.health} / ${view.maxHealth}</span>
+                  <span class="health-bar" aria-label="Health ${percent}%">
+                    <span class="health-fill" style="--health:${percent}%"></span>
+                  </span>
                 </span>
               </div>
             </div>
 
             <div class="stat-row">
               <div class="stat-label">Game Mode</div>
-              <div class="stat-value"><span data-icon="gamepad"></span>${escapeHtml(PLACEHOLDER.mode)}</div>
+              <div class="stat-value"><span data-icon="gamepad"></span>${escapeHtml(view.mode)}</div>
             </div>
 
             <div class="stat-row">
               <div class="stat-label">Model</div>
-              <div class="stat-value"><span data-icon="brain"></span>${escapeHtml(PLACEHOLDER.model)}</div>
+              <div class="stat-value"><span data-icon="brain"></span>${escapeHtml(view.model)}</div>
             </div>
           </div>
 
@@ -109,7 +185,7 @@ function agentCardHtml(agent) {
 
             <div class="stat-row">
               <div class="stat-label">Current Action</div>
-              <div class="stat-value"><span data-icon="walk"></span>${escapeHtml(PLACEHOLDER.action)}</div>
+              <div class="stat-value"><span data-icon="walk"></span>${escapeHtml(view.action)}</div>
             </div>
 
             <div class="stat-row">
@@ -187,11 +263,17 @@ function showLogModal(name) {
       unsub()
       return
     }
+
     const currentEntries = getState().logs[name] || []
     const currentCount = body.children.length - (body.querySelector('.log-empty') ? 1 : 0)
+
+    const empty = body.querySelector('.log-empty')
+    if (empty && currentEntries.length > 0) empty.remove()
+
     for (let i = currentCount; i < currentEntries.length; i++) {
       body.appendChild(buildLogEntryEl(currentEntries[i]))
     }
+
     body.scrollTop = body.scrollHeight
   })
 }
@@ -242,6 +324,7 @@ export function renderAgents(container) {
 
   list.forEach(agent => {
     existingNames.add(agent.name)
+
     let card = container.querySelector(`.agent-card[data-agent-name="${escapeHtml(agent.name)}"]`)
 
     if (!card) {
@@ -268,7 +351,11 @@ function updateDynamicFields(card, agent) {
   const statusClass = agent.online ? 'online' : 'offline'
   const statusText = agent.online ? 'online' : 'offline'
 
-  // Dot + state label
+  const view = getAgentView(agent)
+  const percent = getHealthPercent(view.health, view.maxHealth)
+  const position = formatPosition(view.position)
+
+  // Header dot + state label
   const dot = card.querySelector('.agent-id .dot')
   if (dot) dot.className = `dot ${statusClass}`
 
@@ -278,23 +365,63 @@ function updateDynamicFields(card, agent) {
     label.dataset.status = statusClass
   }
 
-  // Status stat row (inside stats-panel)
-  const statRows = card.querySelectorAll('.stat-row')
-  statRows.forEach(row => {
-    const lbl = row.querySelector('.stat-label')
-    if (lbl && lbl.textContent.trim() === 'Status') {
-      const dotEl = row.querySelector('.dot')
-      if (dotEl) dotEl.className = `dot ${statusClass}`
-      const val = row.querySelector('.stat-value')
-      if (val && val.lastChild) val.lastChild.textContent = agent.online ? 'Online' : 'Offline'
-    }
-  })
-
   // Username pill
   const usernamePill = card.querySelector('.username-pill')
   if (usernamePill) {
     usernamePill.textContent = agent.username || '\u2014'
   }
+
+  // Update each stat row by label
+  const statRows = card.querySelectorAll('.stat-row')
+
+  statRows.forEach(row => {
+    const lbl = row.querySelector('.stat-label')
+    const val = row.querySelector('.stat-value')
+    if (!lbl || !val) return
+
+    const name = lbl.textContent.trim()
+
+    if (name === 'Health') {
+      const healthNumber = row.querySelector('.health-number')
+      if (healthNumber) {
+        healthNumber.textContent = `${view.health} / ${view.maxHealth}`
+      }
+
+      const healthBar = row.querySelector('.health-bar')
+      if (healthBar) {
+        healthBar.setAttribute('aria-label', `Health ${percent}%`)
+      }
+
+      const healthFill = row.querySelector('.health-fill')
+      if (healthFill) {
+        healthFill.style.setProperty('--health', `${percent}%`)
+      }
+    }
+
+    if (name === 'Game Mode') {
+      val.innerHTML = `<span data-icon="gamepad"></span>${escapeHtml(view.mode)}`
+      hydrateIcons(val)
+    }
+
+    if (name === 'Model') {
+      val.innerHTML = `<span data-icon="brain"></span>${escapeHtml(view.model)}`
+      hydrateIcons(val)
+    }
+
+    if (name === 'Position') {
+      val.innerHTML = `<span data-icon="pin"></span>${escapeHtml(position)}`
+      hydrateIcons(val)
+    }
+
+    if (name === 'Current Action') {
+      val.innerHTML = `<span data-icon="walk"></span>${escapeHtml(view.action)}`
+      hydrateIcons(val)
+    }
+
+    if (name === 'Status') {
+      val.innerHTML = `<span class="dot ${statusClass}"></span>${agent.online ? 'Online' : 'Offline'}`
+    }
+  })
 }
 
 // ── Event delegation ──
@@ -328,7 +455,13 @@ async function handleSubmit(e) {
   if (!value) return
 
   if (action === 'command') {
+    addLog(name, 'cmd-start', {
+      command: value,
+      timestamp: Date.now()
+    })
+
     const result = await sendCommand(name, value)
+
     addLog(name, result.ok ? 'cmd-done' : 'cmd-error', {
       command: value,
       output: result.output || result.error || 'Done',

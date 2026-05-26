@@ -1,11 +1,12 @@
 // ── steveX Debug Console ──
 // ES Module entry point. WebSocket-driven real-time agent monitoring.
 
-import { getState, setState, subscribe } from './lib/state.js'
+import { getState, subscribe } from './lib/state.js'
 import { initWebSocket } from './lib/ws-client.js'
 import { fetchStatus, reloadConfig } from './lib/api.js'
 import { hydrateIcons } from './lib/icons.js'
 import { renderAgents, initAgents } from './pages/agents.js'
+import { renderConfigs } from './pages/configs.js'
 
 // ── DOM refs ──
 
@@ -20,15 +21,94 @@ const wsIndicator = document.getElementById('ws-indicator')
 const sidebarWs = document.getElementById('sidebar-ws')
 const sidebarDot = document.querySelector('.sidebar-status .dot')
 
-// ── Sidebar navigation (placeholder) ──
+let currentPage = 'Agents'
+
+// ── Page controls visibility ──
+
+function setAgentControlsVisible(visible) {
+  const controls = [
+    searchInput,
+    statusFilter,
+    sortBy,
+    newAgentButton
+  ]
+
+  controls.forEach(el => {
+    if (!el) return
+
+    const wrapper =
+      el.closest('.toolbar, .filter-bar, .control-bar, .top-controls, .search-bar') ||
+      el.parentElement
+
+    if (wrapper) {
+      wrapper.style.display = visible ? '' : 'none'
+    }
+  })
+}
+
+// ── Sidebar navigation ──
+
+function setActiveNav(activeLabel) {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const label = item.textContent.trim()
+    item.classList.toggle('active', label === activeLabel)
+  })
+}
+
+function setHeader(title, subtitle) {
+  const titleEl = document.querySelector('main h1')
+  if (!titleEl) return
+
+  titleEl.textContent = title
+
+  const subtitleEl = titleEl.nextElementSibling
+  if (subtitleEl) {
+    subtitleEl.textContent = subtitle
+  }
+}
+
+function showAgentsPage() {
+  currentPage = 'Agents'
+
+  setActiveNav('Agents')
+  setHeader('Agents', '智能体管理')
+  setAgentControlsVisible(true)
+
+  if (reloadButton) reloadButton.style.display = ''
+  if (newAgentButton) newAgentButton.style.display = ''
+
+  renderAgents(agentsList)
+}
+
+function showConfigsPage() {
+  currentPage = 'Configs'
+
+  setActiveNav('Configs')
+  setHeader('Configs', '配置管理')
+  setAgentControlsVisible(false)
+
+  if (reloadButton) reloadButton.style.display = ''
+  if (newAgentButton) newAgentButton.style.display = 'none'
+
+  renderConfigs(agentsList)
+}
 
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', (e) => {
     const label = item.textContent.trim()
-    if (label !== 'Agents') {
-      e.preventDefault()
-      alert('Coming soon')
+    e.preventDefault()
+
+    if (label === 'Agents') {
+      showAgentsPage()
+      return
     }
+
+    if (label === 'Configs') {
+      showConfigsPage()
+      return
+    }
+
+    alert('Coming soon')
   })
 })
 
@@ -37,19 +117,28 @@ document.querySelectorAll('.nav-item').forEach(item => {
 searchInput.addEventListener('input', () => {
   const state = getState()
   state.filters.query = searchInput.value.trim()
-  renderAgents(agentsList)
+
+  if (currentPage === 'Agents') {
+    renderAgents(agentsList)
+  }
 })
 
 statusFilter.addEventListener('change', () => {
   const state = getState()
   state.filters.status = statusFilter.value
-  renderAgents(agentsList)
+
+  if (currentPage === 'Agents') {
+    renderAgents(agentsList)
+  }
 })
 
 sortBy.addEventListener('change', () => {
   const state = getState()
   state.filters.sortBy = sortBy.value
-  renderAgents(agentsList)
+
+  if (currentPage === 'Agents') {
+    renderAgents(agentsList)
+  }
 })
 
 newAgentButton.addEventListener('click', () => {
@@ -64,16 +153,31 @@ reloadButton.addEventListener('click', async () => {
   ], { duration: 220 })
 
   await reloadConfig()
+
+  if (currentPage === 'Agents') {
+    renderAgents(agentsList)
+  }
+
+  if (currentPage === 'Configs') {
+    renderConfigs(agentsList)
+  }
 })
 
 // ── WS & uptime indicators ──
 
 function updateWsUI() {
   const { wsConnected } = getState()
+
   wsIndicator.textContent = wsConnected ? 'WS: online' : 'WS: offline'
   wsIndicator.className = wsConnected ? 'ws-online' : 'ws-offline'
-  if (sidebarWs) sidebarWs.textContent = wsIndicator.textContent
-  if (sidebarDot) sidebarDot.className = `dot ${wsConnected ? 'online' : 'offline'}`
+
+  if (sidebarWs) {
+    sidebarWs.textContent = wsIndicator.textContent
+  }
+
+  if (sidebarDot) {
+    sidebarDot.className = `dot ${wsConnected ? 'online' : 'offline'}`
+  }
 }
 
 function updateUptimeUI() {
@@ -97,9 +201,13 @@ fetchStatus().then(() => {
 subscribe(() => {
   updateWsUI()
   updateUptimeUI()
+
+  if (currentPage === 'Agents') {
+    renderAgents(agentsList)
+  }
 })
 
-// Uptime ticker (client-side)
+// Uptime ticker client-side
 setInterval(() => {
   const state = getState()
   state.uptimeSec += 1

@@ -10,6 +10,14 @@ const { WebSocketServer } = require('ws')
 function setupWebSocket(server, manager) {
   const wss = new WebSocketServer({ server })
 
+  function broadcastSnapshot() {
+    broadcast(wss, {
+      type: 'snapshot',
+      agents: manager.getStatus(),
+      uptimeSec: Math.floor(process.uptime())
+    })
+  }
+
   wss.on('connection', (ws) => {
     console.log('[info][ws] Web client connected')
 
@@ -25,14 +33,10 @@ function setupWebSocket(server, manager) {
     }))
   })
 
-  // ── Periodic status updates every 3 seconds ──
+  // ── Periodic status updates every 2 seconds ──
   const statusInterval = setInterval(() => {
-    broadcast(wss, {
-      type: 'snapshot',
-      agents: manager.getStatus(),
-      uptimeSec: Math.floor(process.uptime())
-    })
-  }, 3000)
+    broadcastSnapshot()
+  }, 1000)
 
   // Clean up interval when server closes
   wss.on('close', () => clearInterval(statusInterval))
@@ -43,11 +47,31 @@ function setupWebSocket(server, manager) {
   if (!eventBus) return
 
   eventBus.on('agent:connect', (data) => {
-    broadcast(wss, { type: 'agent:connect', name: data.name })
+    broadcast(wss, {
+      type: 'agent:connect',
+      name: data.name
+    })
+
+    broadcastSnapshot()
   })
 
   eventBus.on('agent:disconnect', (data) => {
-    broadcast(wss, { type: 'agent:disconnect', name: data.name })
+    broadcast(wss, {
+      type: 'agent:disconnect',
+      name: data.name
+    })
+
+    broadcastSnapshot()
+  })
+
+  eventBus.on('agent:update', (data) => {
+    broadcast(wss, {
+      type: 'agent:update',
+      name: data.name,
+      timestamp: data.timestamp || Date.now()
+    })
+
+    broadcastSnapshot()
   })
 
   eventBus.on('agent:command:start', (data) => {
@@ -57,6 +81,8 @@ function setupWebSocket(server, manager) {
       command: data.command,
       timestamp: data.timestamp
     })
+
+    broadcastSnapshot()
   })
 
   eventBus.on('agent:command:done', (data) => {
@@ -69,6 +95,8 @@ function setupWebSocket(server, manager) {
       error: data.error || null,
       timestamp: data.timestamp
     })
+
+    broadcastSnapshot()
   })
 
   eventBus.on('agent:llm:input', (data) => {
@@ -94,8 +122,9 @@ function setupWebSocket(server, manager) {
 
 function broadcast(wss, data) {
   const message = JSON.stringify(data)
+
   for (const client of wss.clients) {
-    if (client.readyState === 1) { // WebSocket.OPEN
+    if (client.readyState === 1) {
       client.send(message)
     }
   }
