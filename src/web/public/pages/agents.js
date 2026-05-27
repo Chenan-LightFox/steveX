@@ -1,7 +1,7 @@
 // ── steveX Agents page ──
 // Rendering + event handlers for the agent management view.
 
-import { getState, addLog, subscribe } from '../lib/state.js'
+import { getState, subscribe } from '../lib/state.js'
 import { connectAgent, disconnectAgent, sendCommand } from '../lib/api.js'
 import { escapeHtml } from '../lib/utils.js'
 import { hydrateIcons } from '../lib/icons.js'
@@ -416,18 +416,7 @@ async function handleSubmit(e) {
   if (!value) return
 
   if (action === 'command') {
-    addLog(name, 'cmd-start', {
-      command: value,
-      timestamp: Date.now()
-    })
-
-    const result = await sendCommand(name, value)
-
-    addLog(name, result.ok ? 'cmd-done' : 'cmd-error', {
-      command: value,
-      output: result.output || result.error || 'Done',
-      timestamp: Date.now()
-    })
+    await sendCommand(name, value)
   } else if (action === 'message') {
     alert('Coming soon')
   }
