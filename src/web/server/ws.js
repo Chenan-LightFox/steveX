@@ -18,6 +18,11 @@ function setupWebSocket(server, manager) {
     })
   }
 
+  // Throttle snapshot broadcasts: mark dirty on events, flush on 1s tick.
+  // This prevents a single command from triggering 3+ redundant snapshots
+  // (agent:command:start → snapshot, agent:command:done → snapshot, agent:update → snapshot).
+  let snapshotDirty = true
+
   wss.on('connection', (ws) => {
     console.log('[info][ws] Web client connected')
 
@@ -33,9 +38,11 @@ function setupWebSocket(server, manager) {
     }))
   })
 
-  // ── Periodic status updates every 2 seconds ──
   const statusInterval = setInterval(() => {
-    broadcastSnapshot()
+    if (snapshotDirty) {
+      broadcastSnapshot()
+      snapshotDirty = false
+    }
   }, 1000)
 
   // Clean up interval when server closes
@@ -47,21 +54,13 @@ function setupWebSocket(server, manager) {
   if (!eventBus) return
 
   eventBus.on('agent:connect', (data) => {
-    broadcast(wss, {
-      type: 'agent:connect',
-      name: data.name
-    })
-
-    broadcastSnapshot()
+    broadcast(wss, { type: 'agent:connect', name: data.name })
+    snapshotDirty = true
   })
 
   eventBus.on('agent:disconnect', (data) => {
-    broadcast(wss, {
-      type: 'agent:disconnect',
-      name: data.name
-    })
-
-    broadcastSnapshot()
+    broadcast(wss, { type: 'agent:disconnect', name: data.name })
+    snapshotDirty = true
   })
 
   eventBus.on('agent:update', (data) => {
@@ -70,8 +69,7 @@ function setupWebSocket(server, manager) {
       name: data.name,
       timestamp: data.timestamp || Date.now()
     })
-
-    broadcastSnapshot()
+    snapshotDirty = true
   })
 
   eventBus.on('agent:command:start', (data) => {
@@ -81,8 +79,7 @@ function setupWebSocket(server, manager) {
       command: data.command,
       timestamp: data.timestamp
     })
-
-    broadcastSnapshot()
+    snapshotDirty = true
   })
 
   eventBus.on('agent:command:done', (data) => {
@@ -95,8 +92,7 @@ function setupWebSocket(server, manager) {
       error: data.error || null,
       timestamp: data.timestamp
     })
-
-    broadcastSnapshot()
+    snapshotDirty = true
   })
 
   eventBus.on('agent:llm:input', (data) => {
