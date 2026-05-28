@@ -30,26 +30,6 @@
 
 ---
 
-## Agent 管理层问题
-
-### MGR-1: `disconnectAgent` 事件顺序错误
-
-- **文件**: `src/agent/agent_manager.js:53-67`
-- **问题**: 先发 `agent:disconnect` 事件，再调 `agent.shutdown()`，前端收到 disconnect 时 agent 实际仍在线
-- **修复方向**: 先 `shutdown()` 再发事件
-- **优先级**: 中
-- **状态**: ✅ 已修复（2026-05-28）
-
-### MGR-2: `connectAgent` 竞态条件
-
-- **文件**: `src/agent/agent_manager.js:36-51`
-- **问题**: 连接期间（`spawn` 事件未触发前）再次调用 `connectAgent` 会创建第二个 bot 实例，因为 `isOnline()` 在 spawn 前返回 false
-- **修复方向**: 为 `SteveXAgent` 增加 `connecting` 状态，`connectAgent()` 同时检查 `isOnline()` 与 `isConnecting()`
-- **优先级**: 中
-- **状态**: ✅ 已修复（2026-05-28）
-
----
-
 ## 性能问题
 
 ### PERF-1: `craft` 命令每次调用都重新加载 `minecraft-data`
@@ -66,7 +46,7 @@
 - **问题**: 全局 `subscribe` 永不取消，配合每秒 WebSocket snapshot，每秒触发 `renderAgents`（虽有 Smart Diff 但 DOM 查询仍有开销）
 - **修复方向**: 对 `renderAgents` 做 `requestAnimationFrame` 节流
 - **优先级**: 低
-- **状态**: 待修
+- **状态**: ✅ 已修复（2026-05-28）
 
 ### PERF-3: `addLog` 用 `shift()` 清理旧日志
 

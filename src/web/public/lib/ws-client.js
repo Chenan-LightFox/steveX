@@ -41,6 +41,10 @@ export function initWebSocket() {
         patchAgent(data.name, () => ({ online: false }))
         break
 
+      case 'agent:update':
+        setState({})
+        break
+
       case 'agent:command:start':
         addLog(data.name, 'cmd-start', {
           command: data.command,

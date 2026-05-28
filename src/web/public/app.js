@@ -165,6 +165,28 @@ reloadButton.addEventListener('click', async () => {
 
 // ── WS & uptime indicators ──
 
+let pendingAgentsRender = false
+
+function scheduleAgentsRender() {
+  if (pendingAgentsRender) return
+
+  pendingAgentsRender = true
+
+  const flush = () => {
+    pendingAgentsRender = false
+
+    if (currentPage === 'Agents') {
+      renderAgents(agentsList)
+    }
+  }
+
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(flush)
+  } else {
+    setTimeout(flush, 0)
+  }
+}
+
 function updateWsUI() {
   const { wsConnected } = getState()
 
@@ -202,9 +224,7 @@ subscribe(() => {
   updateWsUI()
   updateUptimeUI()
 
-  if (currentPage === 'Agents') {
-    renderAgents(agentsList)
-  }
+  scheduleAgentsRender()
 })
 
 // Uptime ticker client-side
