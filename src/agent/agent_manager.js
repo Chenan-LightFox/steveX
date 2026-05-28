@@ -35,7 +35,8 @@ class AgentManager {
 
   connectAgent(name) {
     const cfg = this.agentConfigs.get(name)
-    if (!cfg || this.agents.get(name)?.isOnline()) return !!cfg
+    const existing = this.agents.get(name)
+    if (!cfg || existing?.isOnline() || existing?.isConnecting()) return !!cfg
 
     const agent = new SteveXAgent(cfg, name, this.sharedCommands)
     agent.start()

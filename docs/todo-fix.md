@@ -44,9 +44,9 @@
 
 - **文件**: `src/agent/agent_manager.js:36-51`
 - **问题**: 连接期间（`spawn` 事件未触发前）再次调用 `connectAgent` 会创建第二个 bot 实例，因为 `isOnline()` 在 spawn 前返回 false
-- **修复方向**: 改为 `if (!cfg || this.agents.has(name)) return !!cfg`，只要 agent 存在就不再创建
+- **修复方向**: 为 `SteveXAgent` 增加 `connecting` 状态，`connectAgent()` 同时检查 `isOnline()` 与 `isConnecting()`
 - **优先级**: 中
-- **状态**: 待修
+- **状态**: ✅ 已修复（2026-05-28）
 
 ---
 

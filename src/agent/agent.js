@@ -15,6 +15,7 @@ class SteveXAgent {
     this.movements = null
     this.commands = commands
     this.connected = false
+    this.connecting = false
 
     // Current action shown on the web console.
     // It will be updated when a command is running.
@@ -24,6 +25,7 @@ class SteveXAgent {
   start() {
     const mc = this.config.minecraft
 
+    this.connecting = true
     this.currentAction = 'Connecting'
 
     this.bot = mineflayer.createBot({
@@ -41,6 +43,7 @@ class SteveXAgent {
   registerEvents() {
     this.bot.once('spawn', () => {
       this.connected = true
+      this.connecting = false
       this.currentAction = 'Idle'
 
       console.log(`[info](${this.name}) Bot spawned `)
@@ -52,6 +55,7 @@ class SteveXAgent {
 
     // 统一断连处理：end/kicked 都标记为离线
     const onDisconnect = (reason) => {
+      this.connecting = false
       this.connected = false
       this.currentAction = 'Offline'
 
@@ -135,6 +139,11 @@ class SteveXAgent {
     return this.bot && this.connected
   }
 
+  /** Whether the bot is in the connection handshake. */
+  isConnecting() {
+    return this.bot && this.connecting
+  }
+
   /** The in-game username, falling back to config. */
   getUsername() {
     return this.bot ? this.bot.username : this.config.minecraft.username
@@ -153,6 +162,7 @@ class SteveXAgent {
     }
 
     this.connected = false
+    this.connecting = false
     this.currentAction = 'Offline'
   }
 }
