@@ -4,6 +4,8 @@
 
 > Web 面板细节见 [`web-state.md`](web-state.md)
 
+> 已知问题与技术债见 [`todo-fix.md`](todo-fix.md)
+
 ---
 
 ## 一、项目定位
