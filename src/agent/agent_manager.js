@@ -54,11 +54,10 @@ class AgentManager {
     const agent = this.agents.get(name)
     if (!agent || !agent.isOnline()) return false
 
-    this.eventBus.emit('agent:disconnect', { name })
-
     agent.shutdown()
     this.agents.delete(name)
 
+    this.eventBus.emit('agent:disconnect', { name })
     this.eventBus.emit('agent:update', {
       name,
       timestamp: Date.now()

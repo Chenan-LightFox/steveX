@@ -38,7 +38,7 @@
 - **问题**: 先发 `agent:disconnect` 事件，再调 `agent.shutdown()`，前端收到 disconnect 时 agent 实际仍在线
 - **修复方向**: 先 `shutdown()` 再发事件
 - **优先级**: 中
-- **状态**: 待修
+- **状态**: ✅ 已修复（2026-05-28）
 
 ### MGR-2: `connectAgent` 竞态条件
 
