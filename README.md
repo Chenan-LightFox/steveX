@@ -3,7 +3,7 @@
 
 > **项目定位：** 构建一套 **以"版本控制"与"群体进化"为核心的多智能体系统架构**，在 Minecraft 虚拟环境中探索 AI Agent 的前沿技术。
 
-![design](.\docs\images\design.png)
+![design](./docs/images/design.png)
 
 ---
 
