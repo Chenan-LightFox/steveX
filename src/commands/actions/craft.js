@@ -1,3 +1,5 @@
+const { mcDataManager } = require("../../utils/mc_data")
+
 /**
  * craft <itemName> [count] — craft an item from inventory
  */
@@ -11,7 +13,7 @@ module.exports = {
     const count = args[1] ? parseInt(args[1], 10) : 1
     if (isNaN(count) || count < 1) return { ok: false, error: 'Invalid count' }
 
-    const mcData = require('minecraft-data')(bot.version)
+    const mcData = mcDataManager.get(bot.version)
     const itemId = Object.values(mcData.items).find(i => i.name === itemName || i.displayName?.toLowerCase() === itemName)?.id
     if (!itemId) return { ok: false, error: `Unknown item: "${itemName}"` }
 
