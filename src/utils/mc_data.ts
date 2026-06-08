@@ -1,12 +1,13 @@
 const MinecraftData = require('minecraft-data');
 
 class MCDataManager {
-    mc_data = new Map();
+    private mc_data = new Map<string, any>();
 
-    get(version) {
-        const data = this.mc_data.get(version);
+    public get(version: string) {
+        let data = this.mc_data.get(version);
         if (data === undefined) {
-            this.mc_data.set(version, MinecraftData(version));
+            data = MinecraftData(version);
+            this.mc_data.set(version, data);
         }
         return data;
     }
