@@ -35,7 +35,7 @@ export function patchAgent(name, updater) {
   }
 }
 
-export function addLog(name, entryType, data) {
+export function addLog(name, entryType, data = {}) {
   if (!state.logs[name]) state.logs[name] = []
 
   const entry = {
@@ -50,8 +50,8 @@ export function addLog(name, entryType, data) {
 
   state.logs[name].push(entry)
 
-  while (state.logs[name].length > LOG_MAX) {
-    state.logs[name].shift()
+  if (state.logs[name].length > LOG_MAX) {
+    state.logs[name] = state.logs[name].slice(-LOG_MAX)
   }
 
   notify()
