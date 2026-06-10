@@ -1,14 +1,27 @@
+const skillRegistry = require("../../runtime/skill_registry.ts");
+
+const args = {}
+
+const skill = {
+  name: 'attack',
+  description: 'Attack the nearest entity',
+  args,
+  async handler(agent, _args) {
+    const entity = agent.bot.nearestEntity()
+    if (!entity) return { ok: false, error: 'No entity nearby' }
+    await agent.bot.attack(entity)
+    return { ok: true, output: `Attacked ${entity.name || entity.type}` }
+  }
+}
+
+skillRegistry.register(skill);
+
 /**
  * attack — attack the entity in front
  */
 module.exports = {
-  name: 'attack',
-  description: 'Attack the nearest entity',
+  name: skill.name,
+  description: skill.description,
   usage: 'attack',
-  async handler(bot) {
-    const entity = bot.nearestEntity()
-    if (!entity) return { ok: false, error: 'No entity nearby' }
-    await bot.attack(entity)
-    return { ok: true, output: `Attacked ${entity.name || entity.type}` }
-  }
+  handler: skill.handler
 }

@@ -11,7 +11,7 @@ interface HandlerResult {
 
 type Arguments = { [name: string]: Argument };
 type FuncArgs<A extends Arguments> = { [name in keyof A]: A[name]['default'] | undefined };
-type Handler<A extends Arguments> = (bot: any, args: FuncArgs<A>) => Promise<HandlerResult>;
+type Handler<A extends Arguments> = (agent: any, args: FuncArgs<A>) => Promise<HandlerResult>;
 
 interface Skill<A extends Arguments> {
   name: string;
