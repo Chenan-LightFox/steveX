@@ -118,7 +118,7 @@ class SteveXAgent {
     this.currentAction = command
 
     try {
-      const result = await handler.call(this, this.bot, args)
+      const result = await handler.call(this, this.bot, args, this)
       return result
     } catch (err) {
       console.error(`[error](${this.name}) Command error`, err)
